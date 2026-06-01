@@ -20,12 +20,23 @@ _ASPECTS = [
     "intellij:aspect.bzl%intellij_info_aspect",
 ]
 
+_OUTPUT_GROUPS = [
+    "intellij-sync-java",
+    "intellij-build-java",
+]
+
 test_fixture(
     name = "simple",
     srcs = glob(["simple/**"]),
     aspects = _ASPECTS,
     bazel = ">=8",  # only very old versions of protobuf support bazel 7
     modules = _MODULES,
+    output_groups = select(
+        {
+            "@bazel_tools//src/conditions:windows": [],
+            "//conditions:default": _OUTPUT_GROUPS,
+        },
+    ),
     targets = [
         "//consumerJava:main",
     ],
