@@ -17,7 +17,7 @@ package com.intellij.aspect.tools.differ
 
 import com.google.devtools.intellij.ideinfo.IdeInfo.TargetIdeInfo
 import com.google.protobuf.TextFormat
-import com.intellij.aspect.lib.Languages
+import com.intellij.aspect.lib.Rules
 import com.intellij.aspect.lib.aspectsForLanguages
 import kotlinx.cli.ArgParser
 import kotlinx.cli.ArgType
@@ -218,21 +218,21 @@ fun normalizeTargetKeyLabel(target: TargetIdeInfo): TargetIdeInfo {
     .build()
 }
 
-private fun stringToLangue(s: String): Languages {
+private fun stringToLangue(s: String): Rules {
   return when (s) {
-    "cc" -> Languages.CC
-    "python" -> Languages.PYTHON
-    "java" -> Languages.JAVA
-    "kotlin" -> Languages.KOTLIN
-    "scala" -> Languages.SCALA
-    "go" -> Languages.GO
-    "proto" -> Languages.PROTO
+    "cc" -> Rules.CC
+    "python" -> Rules.PYTHON
+    "java" -> Rules.JAVA
+    "kotlin" -> Rules.KOTLIN
+    "scala" -> Rules.SCALA
+    "go" -> Rules.GO
+    "proto" -> Rules.PROTO
     else -> throw IllegalArgumentException("Unknown language: $s")
   }
 }
 
 fun parseLanguages(s: String) = s.split(",").map(::stringToLangue)
 
-private fun parseRepoMapping(s: String): Map<String, String> {
-  return s.split(",").map { it.split("=", limit = 2).let { (key, value) -> key to value } }.toMap()
+private fun parseRepoMapping(s: String): Map<Rules, String> {
+  return s.split(",").map { it.split("=", limit = 2).let { (key, value) -> stringToLangue(key) to value } }.toMap()
 }

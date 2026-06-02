@@ -22,7 +22,9 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.StandardOpenOption
 import java.util.zip.ZipInputStream
+import kotlin.io.path.exists
 import kotlin.io.path.extension
+import kotlin.io.path.readText
 
 /**
  * Location of the bundled aspect archive inside the jar.
@@ -37,11 +39,11 @@ data class AspectConfig(
   /**
    * A mapping from default repo names to a specific replacement e.g., conical repo name.
    */
-  val repoMapping: Map<String, String>,
+  val repoMapping: Map<Rules, String>,
   /**
-   * Whether to use builtin rules i.e. whether to strip rule set loads.
+   * Languages for which to use the builtin rule, i.e., for which to strip rule set loads.
    */
-  val useBuiltin: Boolean,
+  val useBuiltin: Set<Rules>,
 )
 
 /**
@@ -71,10 +73,10 @@ fun deployAspectZip(
     TransformExternalRepositories(config.repoMapping),
   )
 
-  if (config.useBuiltin) {
+  if (Rules.CC in config.useBuiltin) {
     transformers.add(TransformCcToolchainType)
-    transformers.add(TransformBuiltinRules)
   }
+  transformers.add(TransformBuiltinRules(config.useBuiltin))
 
   val archiveStream = if (archiveZip == null) {
     config.javaClass.getResourceAsStream(BUNDLED_ASPECT)
@@ -102,13 +104,16 @@ private fun extractZipArchive(
       if (entry.isDirectory) {
         Files.createDirectories(target)
       } else {
-        Files.writeString(
-          target,
-          transformFile(stream.nonClosing(), transformers),
-          Charsets.UTF_8,
-          StandardOpenOption.CREATE,
-          StandardOpenOption.TRUNCATE_EXISTING,
-        )
+        val payload = transformFile(stream.nonClosing(), transformers)
+        if (!target.exists() || target.readText() != payload) {
+          Files.writeString(
+            target,
+            payload,
+            Charsets.UTF_8,
+            StandardOpenOption.CREATE,
+            StandardOpenOption.TRUNCATE_EXISTING,
+          )
+        }
       }
     }
   }
