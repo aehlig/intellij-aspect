@@ -15,7 +15,7 @@
  */
 package com.intellij.aspect.tools.differ
 
-import com.google.devtools.intellij.ideinfo.IdeInfo.TargetIdeInfo
+import com.google.devtools.intellij.ideinfo.IntellijIdeInfo.TargetIdeInfo
 import com.google.protobuf.TextFormat
 import com.intellij.aspect.lib.Aspects
 import com.intellij.aspect.lib.Rules
