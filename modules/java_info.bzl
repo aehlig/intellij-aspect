@@ -180,6 +180,7 @@ def _aspect_impl(target, ctx):
             # mark this target as a java target and take dependencies into account.
             return [
                 intellij_provider.create(
+                    ctx = ctx,
                     provider = intellij_provider.JavaInfo,
                     value = intellij_common.struct(
                         has_api_generating_plugins = _has_api_generating_plugins(target),
@@ -212,6 +213,7 @@ def _aspect_impl(target, ctx):
     jdeps = _get_jdeps(target, ctx)
     return [
         intellij_provider.create(
+            ctx = ctx,
             provider = intellij_provider.JavaInfo,
             outputs = _get_outputs(target, ctx, jdeps),
             value = intellij_common.struct(

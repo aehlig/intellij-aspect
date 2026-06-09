@@ -37,7 +37,7 @@ def _merge_dependencies(builder, ctx):
 def _serialize_dependencies(builder):
     """Serializes all dependencies currently tracked by the builder."""
     return [
-        struct(target = dep[intellij_common.TargetInfo].key, dependency_type = key)
+        struct(target = dep[intellij_common.TargetInfo].partial_key, dependency_type = key)
         for key, list_of_sets in builder.dependencies.items()
         for set in list_of_sets
         for dep in set.to_list()
@@ -95,8 +95,11 @@ def _merge_target_info(builder, target, ctx):
     # dependencies have to be serialized last because they might be updated by module providers
     info["deps"] = _serialize_dependencies(builder)
 
+    # generate the target key based on the information currently accumulated by the builder
+    key = intellij_info_builder.build_target_key(builder, target, ctx)
+
     # write the ide info to file and add the generated file to the appropriate output group
-    intellij_info_builder.append_ide_infos(builder, [ide_info.write(target, ctx, info)])
+    intellij_info_builder.append_ide_infos(builder, [ide_info.write(target, ctx, key, info)])
 
 def _aspect_impl(target, ctx):
     builder = intellij_info_builder.create()
@@ -110,7 +113,7 @@ def _aspect_impl(target, ctx):
     _merge_target_info(builder, target, ctx)
     _merge_dependencies(builder, ctx)
 
-    intellij_info = intellij_info_builder.build(builder)
+    intellij_info = intellij_info_builder.build(builder, target, ctx)
 
     return [intellij_info, OutputGroupInfo(**intellij_info.outputs)]
 
