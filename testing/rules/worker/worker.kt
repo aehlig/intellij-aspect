@@ -28,9 +28,11 @@ import java.io.IOException
 import java.io.OutputStream
 import java.nio.file.Files
 import java.nio.file.Path
+import java.security.MessageDigest
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 import java.util.concurrent.ConcurrentLinkedQueue
+import java.util.concurrent.atomic.AtomicInteger
 
 fun worker(
   args: Array<String>,
@@ -38,13 +40,15 @@ fun worker(
 ) = runBlocking {
   require(args.contains("--persistent_worker"))
 
-  // create persisted temp directory outside the sandbox and execroot
-  val cwd = Files.createTempDirectory("bazel_worker_").toAbsolutePath()
+  // the global worker configuration
+  val options = parseTextProto<WorkerOptions>(args[0])
+
+  // persisted working directory outside the sandbox and execroot; reused across
+  // worker restarts so caches and output bases stay warm
+  val cwd = resolveWorkingDirectory(options.workerDir)
 
   log("worker started in: $cwd")
 
-  // the global worker configuration
-  val options = parseTextProto<WorkerOptions>(args[0])
   val shared = createResources(cwd, options)
 
   require(options.maxServers > 0)
@@ -60,7 +64,7 @@ fun worker(
       val pool = pools.getOrPut(input.config.bazelVersion) { ServerPool(input.config.bazelVersion, options.maxServers) }
 
       launch(Dispatchers.IO) {
-        val server = pool.acquireOrCreate { createServer(cwd, input.config.bazelVersion, shared) }
+        val server = pool.acquireOrCreate { version, slot -> createServer(cwd, version, slot, shared) }
         val sandbox = Files.createTempDirectory(cwd, "sandbox_").toAbsolutePath()
 
         log("build started: ${input.projectArchive}}")
@@ -117,12 +121,42 @@ fun worker(
       // best effort shutdown
     }
   }
+}
 
-  try {
-    deleteRecursive(cwd)
-  } catch (_: IOException) {
-    // best effort cleanup during
+/**
+ * Resolves the worker's persistent working directory. When [configured] is set it is used verbatim
+ * (expanding a leading ~). Otherwise, a stable directory is derived under the system temp directory.
+ */
+@Throws(IOException::class)
+private fun resolveWorkingDirectory(configured: String): Path {
+  val base = configured.takeIf { it.isNotBlank() }
+    ?.let(::resolvePath)
+    ?: run {
+      val tmp = Path.of(System.getProperty("java.io.tmpdir"))
+      val project = Path.of("").toAbsolutePath().toString()
+      tmp.resolve("bazel_worker_" + stableHash(project))
+    }
+
+  return Files.createDirectories(base).toAbsolutePath()
+}
+
+/** Removes leftover per-build sandbox directories from earlier worker runs. */
+private fun removeStaleSandboxes(cwd: Path) {
+  Files.newDirectoryStream(cwd, "sandbox_*").use { entries ->
+    entries.forEach { entry ->
+      try {
+        deleteRecursive(entry)
+      } catch (_: IOException) {
+        // best effort cleanup
+      }
+    }
   }
+}
+
+/** Short, stable hex digest of [value], independent of JVM version. */
+private fun stableHash(value: String): String {
+  val digest = MessageDigest.getInstance("SHA-256").digest(value.toByteArray(Charsets.UTF_8))
+  return digest.take(8).joinToString("") { "%02x".format(it) }
 }
 
 data class SharedResources(
@@ -158,30 +192,38 @@ data class BazelServer(
   val identifier: String,
   val version: String,
   val sharedResources: SharedResources,
+  val root: Path,
   val outputRootDirectory: Path,
   val outputBaseDirectory: Path,
 )
 
 @Throws(IOException::class)
-private fun createServer(cwd: Path, version: String, shared: SharedResources): BazelServer {
-  val root = Files.createTempDirectory(cwd, "server_").toAbsolutePath()
+private fun createServer(cwd: Path, version: String, slot: Int, shared: SharedResources): BazelServer {
+  val root = Files.createDirectories(cwd.resolve("server_${sanitizeVersion(version)}_$slot")).toAbsolutePath()
 
   return BazelServer(
-    identifier = root.fileName.toString().removePrefix("server_"),
+    identifier = "$version#$slot",
     version = version,
     sharedResources = shared,
+    root = root,
     outputRootDirectory = Files.createDirectories(root.resolve("output_root")),
     outputBaseDirectory = Files.createDirectories(root.resolve("output_base")),
   ).also { log(it, "created") }
 }
 
+/** Makes [version] safe to use as a single path segment. */
+private fun sanitizeVersion(version: String): String {
+  return version.map { if (it.isLetterOrDigit() || it == '.' || it == '-') it else '_' }.joinToString("")
+}
+
 private class ServerPool(private val version: String, maxServers: Int) {
   private val semaphore = Semaphore(maxServers)
   private val available = ConcurrentLinkedQueue<BazelServer>()
+  private val slots = AtomicInteger(0)
 
-  suspend fun acquireOrCreate(create: (String) -> BazelServer): BazelServer {
+  suspend fun acquireOrCreate(create: (String, Int) -> BazelServer): BazelServer {
     semaphore.acquire()
-    return available.poll() ?: create(version)
+    return available.poll() ?: create(version, slots.getAndIncrement())
   }
 
   fun release(server: BazelServer) {
@@ -220,6 +262,9 @@ private fun BazelServer.shutdown() {
   if (process.waitFor() != 0) {
     process.inputStream.transferTo(System.err)
   }
+
+  // remove the server directory
+  deleteRecursive(root)
 }
 
 private class LogOutputStream(private val server: BazelServer) : OutputStream() {
