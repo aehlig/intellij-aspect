@@ -81,4 +81,5 @@ jar_jar(
     inline_rules = ["rule com.google.protobuf.** com.intellij.aspect.internal.protoinfra.@1"],
     input_jar = "//:sdk_plain_deploy.jar",
     output_jar = "sdk_deploy.jar",
+    visibility = ["//visibility:public"],
 )
