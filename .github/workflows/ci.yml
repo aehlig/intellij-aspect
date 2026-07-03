@@ -40,6 +40,18 @@ jobs:
     runs-on: Large-macOS-arm64-5-14-for-intellij-aspect-public
 
     steps:
+    - name: Free disk space
+      run: |
+        sudo rm -rf ~/Library/Android /Users/runner/Library/Android
+        sudo rm -rf ~/.dotnet /usr/local/share/dotnet
+        sudo rm -rf /usr/local/share/boost
+        sudo rm -rf ~/Library/Developer/CoreSimulator/Caches
+        sudo rm -rf /Library/Developer/CoreSimulator/Profiles/Runtimes
+        sudo rm -rf /Users/runner/hostedtoolcache
+        sudo rm -rf /Users/runner/Library/Developer/CoreSimulator
+        sudo rm -rf /Applications/Xcode_*.app
+        df -h /                                                                                                         
+
     - name: Checkout code
       uses: actions/checkout@v6
 
