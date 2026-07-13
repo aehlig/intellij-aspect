@@ -25,6 +25,24 @@ _IntelliJTargetInfo = provider(
     },
 )
 
+_OLD_ASPECT_EDGES = [
+    "exports",
+    "deps",
+    "jars",
+    "associates",
+    "embed",  # from rules_go
+    "compilers",  # From go_proto_library
+    "java_lib",  # From old proto_library rules
+    "proc_macro_deps",
+    "_java_toolchain",
+    "_jvm",
+    "runtime_jdk",
+    "_scalatest",
+    "_scalatest_runner",
+    "_scalatest_reporter",
+    "runtime_deps",
+]
+
 def _struct(**kwargs):
     """A replacement for standard `struct` function that omits the fields with None value."""
 
@@ -160,7 +178,7 @@ def _aspect(**kwargs):
         kwargs.pop("toolchains_aspects", None)
 
     return aspect(
-        attr_aspects = ["*"],
+        attr_aspects = _OLD_ASPECT_EDGES,
         requires = requires,
         **kwargs
     )
