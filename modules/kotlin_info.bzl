@@ -132,7 +132,9 @@ def _get_kotlin_stdlibs(ctx):
     return [artifact_location.from_file(f) for f in kotlin_toolchain.jvm_stdlibs.compile_jars.to_list()]
 
 def _get_associates(target, ctx):
-    associates_labels = [str(associate.label) for associate in getattr(ctx.rule.attr, "associates", [])]
+    associates = intellij_common.attr_as_label_list(ctx, "associates")
+    associates_labels = [str(associate.label) for associate in associates]
+    associates_keys = intellij_common.target_keys_from(associates)
     direct_dep_targets_list = [
         intellij_common.attr_as_label_list(ctx, attr)
         for attr in ["deps", "jars", "associates"]
@@ -142,14 +144,14 @@ def _get_associates(target, ctx):
         for target_list in direct_dep_targets_list
         for target in target_list
     ]
-    additional_associates = []
     for dep in direct_dep_targets:
         if str(dep.label) in associates_labels:
             for provider in intellij_provider.JVM_MODULES:
                 provider_value = intellij_provider.get(dep, provider)
                 if provider_value:
-                    additional_associates = additional_associates + [str(target.label) for target in getattr(provider_value.internal_value, "exports", [])]
-    return associates_labels + additional_associates
+                    exports = getattr(provider_value.internal_value, "exports", [])
+                    associates_keys += intellij_common.target_keys_from(exports)
+    return associates_keys
 
 def _normalize_jars(jars):
     if type(jars) == "list":
@@ -220,6 +222,8 @@ def _aspect_impl(target, ctx):
         for target in target_list
     ]
     plugins = _get_kotlin_plugins(ctx, dep_targets)
+    associated_targets = _get_associates(target, ctx)
+    exported_compiler_plugin_targets = intellij_common.target_keys_from(plugins)
 
     return [
         intellij_provider.create(
@@ -229,7 +233,8 @@ def _aspect_impl(target, ctx):
             value = intellij_common.struct(
                 language_version = getattr(target[KtJvmInfo], "language_version", None),
                 api_version = getattr(target[KtJvmInfo], "language_version", None),  # API version currently not exposed
-                associates = _get_associates(target, ctx),
+                associates = [key.label for key in associated_targets],
+                associated_targets = associated_targets,
                 kotlinc_opts = _get_kotlinc_options(ctx),
                 stdlibs = _get_kotlin_stdlibs(ctx),
                 kotlinc_plugin_infos = [
@@ -237,7 +242,8 @@ def _aspect_impl(target, ctx):
                     for info in [_extract_kt_compiler_plugin_info(plugin) for plugin in plugins]
                     if info != None
                 ],
-                exported_compiler_plugin_targets_from_deps = [str(plugin.label) for plugin in plugins],
+                exported_compiler_plugin_targets_from_deps = [key.label for key in exported_compiler_plugin_targets],
+                exported_compiler_plugin_targets = exported_compiler_plugin_targets,
                 module_name = getattr(target[KtJvmInfo], "module_name", None),
             ),
             dependencies = {
