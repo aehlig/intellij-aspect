@@ -66,6 +66,7 @@ def _build_depset(src):
     return {
         key: depset(transitive = value)
         for key, value in src.items()
+        if value
     }
 
 def _build_target_key(builder, target, ctx):
