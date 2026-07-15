@@ -67,11 +67,17 @@ class Sandbox(
   ): Map<String, Set<Path>> {
     val cmd = mutableListOf<String>()
     cmd.add(server.sharedResources.bazeliskBinary.toAbsolutePath().toString())
+    cmd.add("--nosystem_rc")
+    cmd.add("--nohome_rc")
     cmd.add("--output_user_root=" + server.outputRootDirectory)
     cmd.add("--output_base=" + server.outputBaseDirectory)
     cmd.add("build")
     cmd.add("--disk_cache=" + server.sharedResources.diskCacheDirectory)
     cmd.add("--repository_cache=" + server.sharedResources.repoCacheDirectory)
+
+    if (majorVersion(version) >= 8) {
+      cmd.add("--repo_contents_cache=" + server.sharedResources.repoContentsCacheDirectory)
+    }
     cmd.add("--registry=" + registryUri())
 
     if (aspects.isNotEmpty()) {
@@ -146,4 +152,8 @@ class Sandbox(
     err.close()
     out.close()
   }
+}
+
+private fun majorVersion(version: String): Int {
+  return version.substringBefore('.').toIntOrNull() ?: 0
 }
