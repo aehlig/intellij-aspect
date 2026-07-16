@@ -3,8 +3,16 @@ load("@rules_kotlin//kotlin:jvm.bzl", "kt_jvm_binary")
 kt_jvm_binary(
     name = "main",
     srcs = [
-        "Main.kt",
+        ":main_srcs",
     ],
     main_class = "org.example.MainKt",
     deps = ["//lib:util"],
 )
+
+genrule(
+  name = "main_srcs",
+  outs = ["Main.kt"],
+  cmd = "echo package org.example > $@; echo import org.example.lib.Util >> $@; echo 'fun main() { println(Util.greeting) }' >> $@",
+)
+
+

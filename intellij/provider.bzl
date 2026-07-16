@@ -56,11 +56,17 @@ def _append_dependencies(builder, group, deps):
     """Appends all dependencies to the specified dependency group."""
     _append_depset(builder.dependencies, {group: deps})
 
+def _append_output(builder, group, files):
+    """Appends the given files to the specified output group."""
+    if files:
+        _append_depset(builder.outputs, {group: depset(files)})
+
 def _build_depset(src):
     """Builds one dict[depset] from the source dict[list[depset]]."""
     return {
         key: depset(transitive = value)
         for key, value in src.items()
+        if value
     }
 
 def _build_target_key(builder, target, ctx):
@@ -79,6 +85,7 @@ def _build(builder, target, ctx):
 intellij_info_builder = struct(
     create = _create,
     append = _append,
+    append_output = _append_output,
     append_ide_infos = _append_ide_infos,
     append_dependencies = _append_dependencies,
     build_target_key = _build_target_key,

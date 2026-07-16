@@ -101,12 +101,24 @@ def _merge_target_info(builder, target, ctx):
         # append the already generated info from the toolchains
         intellij_info_builder.append_ide_infos(builder, [it.info_file for it in toolchain_infos])
 
-    # dependencies have to be serialized last because they might be updated by module providers
     info["deps"] = _serialize_dependencies(builder)
 
     # generate the target key based on the information currently accumulated by the builder
     key = intellij_info_builder.build_target_key(builder, target, ctx)
 
+    # Materialize generated sources
+    intellij_info_builder.append_output(
+        builder,
+        intellij_provider.BUILD_OUTPUT,
+        [
+            f
+            for target in intellij_common.attr_as_label_list(ctx, "srcs")
+            for f in (target[DefaultInfo].files or depset()).to_list()
+            if not f.is_source
+        ],
+    )
+
+    # dependencies have to be serialized last because they might be updated by module providers
     # write the ide info to file and add the generated file to the appropriate output group
     intellij_info_builder.append_ide_infos(builder, [ide_info.write(target, ctx, key, info)])
 

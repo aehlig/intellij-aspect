@@ -40,7 +40,7 @@ class SimpleTest {
 
     // Sources are reported correctly
     assertThat(target.srcsList.size).isEqualTo(1)
-    assertThat(target.srcsList[0].isSource).isTrue()
+    assertThat(target.srcsList[0].isSource).isFalse()
     assertThat(target.srcsList[0].relativePath).isEqualTo("Main.kt")
 
     // JVM Info
@@ -98,5 +98,6 @@ class SimpleTest {
     val buildFiles = aspect.findOutputGroup(OutputGroups.BUILD)
     assertThat(buildFiles.filter { it.endsWith("/main.jar") }).isNotEmpty()
     assertThat(buildFiles.filter { it.endsWith("/lib/util.jar") }).isNotEmpty()
+    assertThat(buildFiles.filter { it.endsWith("Main.kt") }).isNotEmpty()
   }
 }
