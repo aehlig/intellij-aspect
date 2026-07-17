@@ -90,10 +90,10 @@ Tests live under `testing/` and are built around a matrix-based fixture system.
 
 **Fixtures** (`testing/fixtures/`) are small Bazel projects (cpp/simple, java/simple, etc.)
 that get built with the aspect. A fixture is declared with `test_fixture()`, which
-specifies the project sources, module dependencies, aspects to apply, and targets to build.
+specifies the project sources, module dependencies, rule sets for which to use the aspect, and targets to build.
 
 **Test matrix** -- Each fixture is automatically tested across a cartesian product of:
-- **Bazel versions**: 7.7.0, 8.6.0, 9.0.0 (configurable via version specs like `">=8"`)
+- **Bazel versions**: 7.7.1, 8.7.0, 9.2.0 (configurable via version specs like `">=8"`)
 - **Deployment modes**: `bcr`, `materialized`, and optionally `builtin`
 - **Module versions**: different versions of rule sets (e.g. rules_cc 0.1.1 vs 0.2.14)
 
@@ -116,7 +116,7 @@ test_fixture(
     name = "simple",
     srcs = glob(["simple/**"]),
     modules = [":rules_cc_latest"],
-    aspects = ["intellij:aspect.bzl%intellij_info_aspect"],
+    rule_sets = ["cc"],
     targets = ["//:main"],
 )
 ```
