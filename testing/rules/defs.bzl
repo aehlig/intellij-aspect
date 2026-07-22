@@ -59,6 +59,7 @@ def test_fixture(
         output_groups = [],
         bazel = None,
         builtin = False,
+        materialized = True,
         bcr = True,
         strip_prefix = "",
         use_msys2 = False,
@@ -98,18 +99,19 @@ def test_fixture(
     """
     bazel_versions = _resolve_bazel_spec(bazel)
     matrix_name = name + "_matrix"
+    configs = []
 
-    _test_matrix(
-        name = matrix_name + "_materialized",
-        rule_sets = rule_sets,
-        bazel = bazel_versions,
-        modules = modules,
-        aspect_deployment = "materialized",
-        visibility = ["//visibility:private"],
-        testonly = 1,
-    )
-
-    configs = [matrix_name + "_materialized"]
+    if materialized:
+        _test_matrix(
+            name = matrix_name + "_materialized",
+            rule_sets = rule_sets,
+            bazel = bazel_versions,
+            modules = modules,
+            aspect_deployment = "materialized",
+            visibility = ["//visibility:private"],
+            testonly = 1,
+        )
+        configs.append(matrix_name + "_materialized")
 
     if bcr:
         _test_matrix(

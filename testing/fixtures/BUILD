@@ -77,6 +77,7 @@ test_module_deps(
     module_name = "protobuf",
     versions = [
         "34.1",
+        "21.7",
     ],
 )
 
@@ -84,6 +85,7 @@ test_module_deps(
     module_name = "rules_proto",
     versions = [
         "7.1.0",
+        "5.3.0-21.7",
     ],
 )
 

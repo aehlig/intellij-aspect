@@ -15,13 +15,19 @@
 load("@rules_proto//proto:defs.bzl", "ProtoInfo", "proto_common")
 load("//common:artifact_location.bzl", "artifact_location")
 load("//common:common.bzl", "intellij_common")
+load("//common:third_party/proto_common.bzl", "fallback_get_import_path")
 load(":provider.bzl", "intellij_provider")
+
+def _get_import_path(proto_file):
+    if hasattr(proto_common, "get_import_path"):
+        return proto_common.get_import_path(proto_file)
+    return fallback_get_import_path(proto_file)
 
 def _source_mappings(target):
     mappings = []
     for source in target[ProtoInfo].direct_sources:
         proto = intellij_common.struct(
-            import_path = proto_common.get_import_path(source),
+            import_path = _get_import_path(source),
             proto_file = artifact_location.from_file(source),
         )
         mappings.append(proto)
