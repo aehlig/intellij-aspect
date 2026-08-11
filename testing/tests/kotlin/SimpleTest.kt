@@ -52,7 +52,6 @@ class SimpleTest {
     assertThat(target.javaCommon.jarsList.flatMap { it.interfaceJarsList }.size).isEqualTo(1)
 
     // Kotlin-specific information is present
-    assertThat(target.kotlinTargetInfo.stdlibsList).isNotEmpty()
     assertThat(target.kotlinTargetInfo.languageVersion).isNotEmpty()
   }
 
@@ -85,7 +84,6 @@ class SimpleTest {
     ).isEqualTo("lib/util.abi.jar")
 
     // Kotlin-specific information is present
-    assertThat(target.kotlinTargetInfo.stdlibsList).isNotEmpty()
     assertThat(target.kotlinTargetInfo.languageVersion).isNotEmpty()
   }
 

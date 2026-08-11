@@ -17,6 +17,7 @@ load("@rules_kotlin//kotlin/internal:opts.bzl", "JavacOptions", "KotlincOptions"
 load("//common:artifact_location.bzl", "artifact_location")
 load("//common:common.bzl", "intellij_common")
 load("//common:dependencies.bzl", "intellij_deps")
+load(":kotlin_toolchain_internal.bzl", "intellij_kotlin_toolchain_internal")
 load(":provider.bzl", "intellij_provider")
 
 IMPORT_RULE_KIND = ["kt_jvm_import"]
@@ -24,21 +25,27 @@ COMPILE_DEPS = ["associates"]
 EXPORTED_COMPILE_TIME_DEPS = ["exports"]
 RUNTIME_DEPS = ["resource_jars"]
 
+def _kt_toolchain(ctx):
+    if not hasattr(ctx.rule, "toolchains"):
+        return struct()
+    if not TOOLCHAIN_TYPE in ctx.rule.toolchains:
+        return struct()
+    aspect_provider = ctx.rule.toolchains[TOOLCHAIN_TYPE]
+    if not intellij_provider.KotlinToolchainInternal in aspect_provider:
+        return struct()
+    return getattr(getattr(aspect_provider[intellij_provider.KotlinToolchainInternal], "internal_value", struct()), "toolchain_info", struct())
+
 def _get_additional_javac_options(ctx):
-    if TOOLCHAIN_TYPE not in ctx.toolchains:
-        return []
-    kotlin_toolchain = ctx.toolchains[TOOLCHAIN_TYPE]
-    toolchain_javac_opts = kotlin_toolchain.javac_options
+    kotlin_toolchain = _kt_toolchain(ctx)
+    toolchain_javac_opts = getattr(kotlin_toolchain, "javac_options", [])
     javac_opts_target = getattr(ctx.rule.attr, "javac_opts", None)
     javac_opts = javac_opts_target[JavacOptions] if javac_opts_target and JavacOptions in javac_opts_target else toolchain_javac_opts
 
-    return javac_options_to_flags(javac_opts)
+    return javac_options_to_flags(javac_opts) or []
 
 def _get_kotlinc_options(ctx):
-    if TOOLCHAIN_TYPE not in ctx.toolchains:
-        return []
-    kotlin_toolchain = ctx.toolchains[TOOLCHAIN_TYPE]
-    toolchain_kotlinc_opts = kotlin_toolchain.kotlinc_options
+    kotlin_toolchain = _kt_toolchain(ctx)
+    toolchain_kotlinc_opts = getattr(kotlin_toolchain, "kotlinc_options", [])
     kotlinc_opts_target = getattr(ctx.rule.attr, "kotlinc_opts", None)
     kotlinc_opts = kotlinc_opts_target[KotlincOptions] if kotlinc_opts_target and KotlincOptions in kotlinc_opts_target else toolchain_kotlinc_opts
 
@@ -122,10 +129,7 @@ def _extract_kt_compiler_plugin_info(plugin):
     )
 
 def _get_kotlin_stdlibs(ctx):
-    if not TOOLCHAIN_TYPE in ctx.toolchains:
-        return []
-
-    kotlin_toolchain = ctx.toolchains[TOOLCHAIN_TYPE]
+    kotlin_toolchain = _kt_toolchain(ctx)
     if not hasattr(kotlin_toolchain, "jvm_stdlibs"):
         return []
 
@@ -179,8 +183,9 @@ def _get_outputs(target, ctx, plugins):
     resolve_files = []
     resolve_transitives = []
     sync_transitives = []
-    if TOOLCHAIN_TYPE in ctx.toolchains and hasattr(ctx.toolchains[TOOLCHAIN_TYPE], "jvm_stdlibs"):
-        sync_transitives = [ctx.toolchains[TOOLCHAIN_TYPE].jvm_stdlibs.compile_jars]
+    toolchain = _kt_toolchain(ctx)
+    if hasattr(toolchain, "jvm_stdlibs"):
+        sync_transitives = [toolchain.jvm_stdlibs.compile_jars]
     for plugin in plugins:
         if KtCompilerPluginInfo in plugin:
             sync_transitives += [plugin[KtCompilerPluginInfo].classpath]
@@ -277,8 +282,7 @@ def _aspect_impl(target, ctx):
 intellij_kotlin_info_aspect = intellij_common.aspect(
     implementation = _aspect_impl,
     provides = [intellij_provider.KotlinInfo],
-    toolchains = [
-        config_common.toolchain_type(TOOLCHAIN_TYPE, mandatory = False),
-    ],
-    required_aspect_providers = [[it] for it in intellij_provider.JVM_MODULES if it != intellij_provider.KotlinInfo],
+    requires = [intellij_kotlin_toolchain_internal],
+    required_aspect_providers = [[it] for it in intellij_provider.JVM_MODULES if it != intellij_provider.KotlinInfo] + [[intellij_provider.KotlinToolchainInternal]],
+    toolchains_aspects = [TOOLCHAIN_TYPE],
 )
