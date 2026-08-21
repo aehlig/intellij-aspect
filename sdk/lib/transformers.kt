@@ -100,7 +100,7 @@ object TransformJavaSemantics : TransformFieldLoad(
 
 class TransformScalaToolchainType(scalaRepositoryName: String) : TransformFieldLoad(
   fieldName = "SCALA_TOOLCHAIN_TYPE",
-  replacement = label("$scalaRepositoryName//scala:toolchain_type")
+  replacement = label("$scalaRepositoryName//scala:toolchain_type"),
 )
 
 private fun label(value: String): String = "Label(\"$value\")"

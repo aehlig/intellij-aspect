@@ -45,7 +45,8 @@ fun repoMappingForRules(mapping: Map<Rules, String>): Map<String, String> {
 }
 
 enum class Aspects(val pkg: String, val file: String, val aspect: String) {
-  INTELLIJ("config", "aspect.bzl", "intellij_aspect");
+  INTELLIJ("config", "aspect.bzl", "intellij_aspect"),
+  ;
 
   override fun toString(): String {
     return "$pkg:$file%$aspect"

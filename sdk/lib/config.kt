@@ -52,7 +52,7 @@ intellij_module.container(
     name = "module_container",
     visibility = ["//visibility:public"],
 )
-""".trimIndent()
+    """.trimIndent()
 }
 
 private fun generateConfigStruct(config: AspectConfig) = """

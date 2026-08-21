@@ -84,8 +84,8 @@ fun main(args: Array<String>) {
   val targetPath = Path.of(path).toAbsolutePath()
   val relativePath = relativeDestination?.let(Path::of)
 
-  val rulesets = languages.split(",").mapNotNull {
-    language -> Rules.entries.firstOrNull() { it.name.equals(language, ignoreCase = true) }
+  val rulesets = languages.split(",").mapNotNull { language ->
+    Rules.entries.firstOrNull { it.name.equals(language, ignoreCase = true) }
   }.toSet()
 
   System.err.println("Selected languages: ${rulesets.joinToString(", ")}")
@@ -154,7 +154,14 @@ private fun parseRuleRemap(remap: String): Map<Rules, String> {
 }
 
 @Throws(IOException::class)
-private fun deployIde(targetPath: Path, relativePath: Path?, rulesets: Set<Rules>, repoMapping: Map<Rules, String>, bazelVersion: String, useBuiltin: Boolean) {
+private fun deployIde(
+  targetPath: Path,
+  relativePath: Path?,
+  rulesets: Set<Rules>,
+  repoMapping: Map<Rules, String>,
+  bazelVersion: String,
+  useBuiltin: Boolean,
+) {
   val config = AspectConfig(
     bazelVersion = bazelVersion,
     repoMapping = repoMapping,

@@ -21,8 +21,8 @@ load("//common:artifact_location.bzl", "artifact_location")
 load("//common:common.bzl", "intellij_common")
 load("//common:dependencies.bzl", "intellij_deps")
 load("//common:make_variables.bzl", "expand_make_variables")
-load("//common:provider.bzl", "intellij_provider")
 load("//common:output_groups.bzl", "intellij_output_groups")
+load("//common:provider.bzl", "intellij_provider")
 load(":module.bzl", "intellij_module")
 
 # additional compile time dependencies collected for cc targets

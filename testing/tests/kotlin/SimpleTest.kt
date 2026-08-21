@@ -73,9 +73,21 @@ class SimpleTest {
     // Common information
     if (aspect.isBCRDeployment()) {
       // In BCR deployment, we always run all modules; so additional information can come from the JavaInfo provider
-      assertThat(target.javaCommon.jarsList.flatMap { it.binaryJarsList }.map { it.relativePath }.toSet()).containsExactly("lib/util.jar")
-      assertThat(target.javaCommon.jarsList.flatMap { it.sourceJarsList }.map { it.relativePath }.toSet()).containsExactly("lib/util-sources.jar")
-      assertThat(target.javaCommon.jarsList.flatMap { it.interfaceJarsList }.map { it.relativePath }.toSet()).containsExactly("lib/util.abi.jar")
+      assertThat(
+        target.javaCommon.jarsList.flatMap {
+          it.binaryJarsList
+        }.map { it.relativePath }.toSet(),
+      ).containsExactly("lib/util.jar")
+      assertThat(
+        target.javaCommon.jarsList.flatMap {
+          it.sourceJarsList
+        }.map { it.relativePath }.toSet(),
+      ).containsExactly("lib/util-sources.jar")
+      assertThat(
+        target.javaCommon.jarsList.flatMap {
+          it.interfaceJarsList
+        }.map { it.relativePath }.toSet(),
+      ).containsExactly("lib/util.abi.jar")
     } else {
       assertThat(target.javaCommon.jarsList.flatMap { it.binaryJarsList }.size).isEqualTo(1)
       assertThat(target.javaCommon.jarsList.flatMap { it.binaryJarsList }[0].relativePath).isEqualTo("lib/util.jar")

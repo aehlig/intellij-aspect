@@ -184,4 +184,3 @@ module = intellij_module.define(
     direct_toolchain_deps_do_not_use = [SCALA_TOOLCHAIN_TYPE],
     rulesets = ["@rules_scala"],
 )
-
