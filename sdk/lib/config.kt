@@ -65,7 +65,7 @@ config = struct(
 """
 
 private fun generateAspectConfig(relativeDestination: Path, config: AspectConfig): String {
-  val modules = modulesForRules(config.rulesets)
+  val modules = modulesForRules(config.rulesets ?: (config.useBuiltin + config.repoMapping.keys))
   val prefix = asBazelPath(relativeDestination)
 
   val files = modules.joinToString(", ") { it.file }
