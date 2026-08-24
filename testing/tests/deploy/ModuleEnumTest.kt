@@ -28,17 +28,6 @@ import java.util.zip.ZipFile
 class ModuleEnumTest {
 
   @Test
-  fun testModuleRulesets() {
-    val supportedRulesets = Rules.entries.map { it.rulesetName }.toSet()
-
-    Modules.entries.forEach { module ->
-      assertWithMessage("module %s declares unsupported rulesets: %s", module.name, module.rulesets)
-        .that(supportedRulesets)
-        .containsAtLeastElementsIn(module.rulesets)
-    }
-  }
-
-  @Test
   fun testModuleFilesExist() {
     val archive = requireNotNull(System.getenv("ARCHIVE_IDE"))
     val archivePath = Runfiles.preload().unmapped().rlocation(archive)

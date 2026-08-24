@@ -17,9 +17,11 @@ _ENUM_FILE_TEMPLATE = """
 
 package %s
 
+import com.intellij.aspect.lib.Rules
+
 enum class Modules(
   val file: String,
-  val rulesets: List<String>,
+  val rulesets: List<Rules>,
 ) {
 %s
 }
@@ -52,7 +54,7 @@ def _format_entry(module):
     return _ENUM_ENTRY_TEMPLATE.format(
         name = module.file.upper(),
         file = module.file,
-        rulesets = ", ".join(['"%s"' % it for it in module.rulesets]),
+        rulesets = ", ".join(['Rules.%s' % it for it in module.rulesets]),
     )
 
 def _kt_aspect_enum_impl(ctx):

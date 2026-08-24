@@ -34,7 +34,7 @@ enum class OutputGroups(val groupName: String) {
 }
 
 fun modulesForRules(rules: Iterable<Rules>): List<Modules> {
-  val rulesets = rules.map { it.rulesetName }.toSet()
+  val rulesets = rules.toSet()
   return Modules.entries.filter { module -> module.rulesets.isEmpty() || module.rulesets.any { it in rulesets } }
 }
 
