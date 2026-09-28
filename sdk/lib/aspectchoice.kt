@@ -30,8 +30,8 @@ enum class Rules(val rulesetName: String) {
 
 enum class OutputGroups(val groupName: String) {
   INFO("intellij-info"),
-  SYNC("intellij-sync"),
-  BUILD("intellij-build"),
+  SYNC("_intellij-sync"),
+  BUILD("_intellij-build"),
 }
 
 fun modulesForRules(rules: Iterable<Rules>): List<Modules> {
