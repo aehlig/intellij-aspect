@@ -15,8 +15,8 @@
 load(":common.bzl", "intellij_common")
 
 _INFO = "intellij-info"
-_SYNC = "intellij-sync"
-_BUILD = "intellij-build"
+_SYNC = "_intellij-sync"
+_BUILD = "_intellij-build"
 
 def _source_depset(direct = None):
     """Return a depset with direct files filtered to sources only"""
